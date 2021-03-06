@@ -1,0 +1,11 @@
+.env
+
+# package directories
+app/node_modules
+app/jspm_packages
+
+# Serverless directories
+app/.serverless
+
+# Webpack directories
+app/.webpack
