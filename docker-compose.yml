@@ -3,7 +3,11 @@ version: '3'
 services:
   weblog_mail:
     container_name: weblog_mail
-    build: ./node
+    build:
+      context: ./node
+      args: 
+        - AWS_ACCESS_KEY=$AWS_ACCESS_KEY
+        - AWS_SECRET_KEY=$AWS_SECRET_KEY
     tty: true
     ports:
       - 9000:9000
