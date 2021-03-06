@@ -7,8 +7,5 @@ services:
     tty: true
     ports:
       - 9000:9000
-    environment:
-      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
-      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
     volumes:
       - ./app:/app
