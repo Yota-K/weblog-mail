@@ -5,6 +5,7 @@ provider:
   region: ap-northeast-1
   runtime: nodejs12.x
   timeout: 30
+  memorySize: 128
   # 特定の許可ステートメントを設定
   # SESをLambdaから使うには上記の記述が必要
   iamRoleStatements:

@@ -1,5 +1,7 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import * as AWS from 'aws-sdk';
+import { mailTemplate } from './mail-template';
+import { EventType } from './type';
 
 export const sendMail: Handler = (
   event: APIGatewayEvent, 
@@ -7,41 +9,44 @@ export const sendMail: Handler = (
   callback: Callback
 ) => {
   // リクエストボディの内容を取得
-  const data = JSON.parse(event.body);
+  const { name, email, message }: EventType = JSON.parse(event.body);
 
-  if (!data.name) throw new Error('名前が入力されていません');
+  if (!name) throw new Error('名前が入力されていません');
 
-  if (!data.email) throw new Error('メールが入力されていません');
+  if (!email) throw new Error('メールが入力されていません');
 
-  if (!data.message) throw new Error('お問い合わせ内容が入力されていません');
+  if (!message) throw new Error('お問い合わせ内容が入力されていません');
 
   // ローカル実行用
-  if (process.env.NODE_ENV) {
-    console.log(event.body);
-    return;
-  }
+  // ※コメントアウトしないとコードが動かないので、開発が終わったらコメントアウトする
+  // if (process.env.NODE_ENV) {
+  //   console.log(event.body);
+  //   return;
+  // }
 
   const ses = new AWS.SES({
     region: 'ap-northeast-1',
   });
 
   const params = {
-    // FROM
-    Source: data.email,
+    // メールの送信元
+    // 認証されたメールアドレスからしかメールを送信することはできない
+    Source: 'powdersugar828828@gmail.com',
     Destination: {
+      // メールの送り先
       ToAddresses: [
-        'powdersugar828828@gmail.com',
+        'karukichi_yah0124@icloud.com',
       ],
     },
     Message: {
       Subject: {
-        Data: `カルキチブログからメッセージです ${data.name}`,
+        Data: `カルキチブログからメッセージが送信されました`,
         Charset: 'utf-8',
       },
       Body: {
-        Text: {
-          Data: data.message,
-          Charset: 'utf-8'
+        Html: {
+          Data: mailTemplate(name, email, message),
+          Charset : 'utf-8',
         },
       },
     },
@@ -56,7 +61,9 @@ export const sendMail: Handler = (
         statusCode: er.statusCode,
         headers: {
           'Content-Type': 'text/plain',
+          'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
           'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST'
         },
         body: 'メールの送信に失敗しました'
       })
@@ -65,7 +72,9 @@ export const sendMail: Handler = (
         statusCode: 200,
         headers: {
           'Content-Type': 'application/json',
+          'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
           'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST'
         },
         body: JSON.stringify(result)
       })

@@ -4,7 +4,9 @@
   "description": "Serverless aws-nodejs-typescript template",
   "main": "serverless.ts",
   "scripts": {
-    "local:invoke": "NODE_ENV=stg && serverless offline"
+    "local:invoke": "NODE_ENV=stg && serverless offline",
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod"
   },
   "engines": {
     "node": ">=14.15.0"
