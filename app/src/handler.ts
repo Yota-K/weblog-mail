@@ -17,13 +17,6 @@ export const sendMail: Handler = (
 
   if (!message) throw new Error('お問い合わせ内容が入力されていません');
 
-  // ローカル実行用
-  // ※コメントアウトしないとコードが動かないので、開発が終わったらコメントアウトする
-  // if (process.env.NODE_ENV) {
-  //   console.log(event.body);
-  //   return;
-  // }
-
   const ses = new AWS.SES({
     region: 'ap-northeast-1',
   });
