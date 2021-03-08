@@ -2,8 +2,10 @@ import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import * as AWS from 'aws-sdk';
 import { mailTemplate } from './mail-template';
 import { EventType } from './type';
+import { checkDomain } from './check-domain';
+import { generateResponseHeader } from './respons-header';
 
-export const sendMail: Handler = (
+export const sendMail: Handler = async (
   event: APIGatewayEvent, 
   context: Context, 
   callback: Callback
@@ -21,56 +23,47 @@ export const sendMail: Handler = (
     region: 'ap-northeast-1',
   });
 
-  const params = {
-    // メールの送信元
-    // 認証されたメールアドレスからしかメールを送信することはできない
-    Source: 'powdersugar828828@gmail.com',
-    Destination: {
-      // メールの送り先
-      ToAddresses: [
-        'karukichi_yah0124@icloud.com',
-      ],
-    },
-    Message: {
-      Subject: {
-        Data: `カルキチブログからメッセージが送信されました`,
-        Charset: 'utf-8',
-      },
-      Body: {
-        Html: {
-          Data: mailTemplate(name, email, message),
-          Charset : 'utf-8',
-        },
-      },
-    },
-  };
-
+  const origin = event.headers['Origin'];
+  
   // メールを送る処理
-  ses.sendEmail(params, (er, result) => {
-    if (er) {
-      console.error(er);
-
-      callback(null, {
-        statusCode: er.statusCode,
-        headers: {
-          'Content-Type': 'text/plain',
-          'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST'
-        },
-        body: 'メールの送信に失敗しました'
-      })
+  try {
+    // 許可されていないオリジンからリクエストが送られたらメールを送信しない
+    if (!checkDomain(origin)) {
+      callback(
+        null, 
+        generateResponseHeader(403, origin, '許可されていないオリジンからリクエストが送られました')
+      );
     } else {
-      callback(null, {
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST'
+      await ses.sendEmail({
+        // メールの送信元
+        // 認証されたメールアドレスからしかメールを送信することはできない
+        Source: 'powdersugar828828@gmail.com',
+        Destination: {
+          // メールの送り先
+          ToAddresses: [
+            'karukichi_yah0124@icloud.com',
+          ],
         },
-        body: JSON.stringify(result)
+        Message: {
+          Subject: {
+            Data: `カルキチブログからメッセージが送信されました`,
+            Charset: 'utf-8',
+          },
+          Body: {
+            Html: {
+              Data: mailTemplate(name, email, message),
+              Charset : 'utf-8',
+            },
+          },
+        },
       })
+      .promise();
+
+      callback(null, generateResponseHeader(200, origin, 'メールの送信に成功しました'));
     }
-  });
+  } catch (er) {
+    console.error(er);
+
+    callback(null, generateResponseHeader(500, origin, 'メールの送信に失敗しました'));
+  }
 }
