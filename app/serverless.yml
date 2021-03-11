@@ -27,7 +27,18 @@ functions:
       - http:
           method: post
           path: send-mail
-          cors: true
+          cors:
+            origins:
+              - https://karukichi-blog.netlify.app
+              - https://staging--karukichi-blog.netlify.app
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
 
 custom:
   serverless-offline:

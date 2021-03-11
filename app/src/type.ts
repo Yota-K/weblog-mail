@@ -12,3 +12,8 @@ export interface RecaptchaResult {
   score: number,
   action: string;
 }
+
+export interface RequestHeaders {
+  'Access-Control-Allow-Origin': string;
+  'Access-Control-Allow-Credentials'?: boolean;
+}

@@ -1,10 +1,10 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
+import { ALLOWED_ORIGINS } from './allow-origins';
 import { mailTemplate } from './mail-template';
-import { EventType, RecaptchaResult } from './type';
-import { checkDomain } from './check-domain';
 import { generateResponseHeader } from './respons-header';
+import { EventType, RecaptchaResult, RequestHeaders } from './type';
 
 require('dotenv').config();
 
@@ -13,12 +13,40 @@ export const sendMail: Handler = async (
   context: Context, 
   callback: Callback
 ) => {
-  // オリジンを取得
-  const origin = event.headers['Origin'];
-
   // リクエストボディの内容を取得
   const { name, email, message, token }: EventType = JSON.parse(event.body);
 
+  console.log(event.body);
+
+  if (!name) {
+    throw new Error('名前が入力されていません');
+  } else if (!email) {
+    throw new Error('メールが入力されていません');
+  } else if (!message) {
+    throw new Error('お問い合わせ内容が入力されていません');
+  }
+
+  const replaceMessage = message.replace(/\n/g, '<br>')
+  console.log(replaceMessage);
+
+  // オリジンを取得
+  const origin = event.headers.origin;
+  let headers: RequestHeaders;
+
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    headers = {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': true,
+    };
+  } else {
+    headers = {
+      'Access-Control-Allow-Origin': '*',
+    };
+  }
+
+  console.info(`APIが実行されたオリジンは、${origin}です`);
+
+  // Recaptchaによるチェックの実施
   const recaptchaRes = await fetch('https://www.google.com/recaptcha/api/siteverify', {
     method: 'POST',
     headers: {
@@ -29,16 +57,9 @@ export const sendMail: Handler = async (
 
   const recaptchaResult: RecaptchaResult = await recaptchaRes.json();
 
+  // Recaptchaによるチェックが失敗した場合はエラーコードを返す
   if (!recaptchaResult.success) {
-    callback(null, generateResponseHeader(403, origin, '不正なリクエストが送信されました'));
-  }
-
-  if (!name) {
-    throw new Error('名前が入力されていません');
-  } else if (!email) {
-    throw new Error('メールが入力されていません');
-  } else if (!message) {
-    throw new Error('お問い合わせ内容が入力されていません');
+    callback(null, generateResponseHeader(400, headers, '不正なリクエストが送信されました'));
   }
 
   const ses = new AWS.SES({
@@ -48,10 +69,10 @@ export const sendMail: Handler = async (
   // メールを送る処理
   try {
     // 許可されていないオリジンからリクエストが送られたらメールを送信しない
-    if (!checkDomain(origin)) {
+    if (!ALLOWED_ORIGINS.includes(origin)) {
       callback(
         null, 
-        generateResponseHeader(403, origin, '許可されていないオリジンからリクエストが送信されました')
+        generateResponseHeader(403, headers, '許可されていないオリジンからリクエストが送信されました')
       );
     } else {
       await ses.sendEmail({
@@ -79,11 +100,11 @@ export const sendMail: Handler = async (
       })
       .promise();
 
-      callback(null, generateResponseHeader(200, origin, 'メールの送信に成功しました'));
+      callback(null, generateResponseHeader(200, headers, 'メールの送信に成功しました'));
     }
   } catch (er) {
     console.error(er);
 
-    callback(null, generateResponseHeader(500, origin, 'メールの送信に失敗しました'));
+    callback(null, generateResponseHeader(500, headers, 'メールの送信に失敗しました'));
   }
 }
