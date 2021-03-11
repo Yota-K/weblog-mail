@@ -1,6 +1,8 @@
+import { RequestHeaders } from './type';
+
 export const generateResponseHeader = (
   statusCode: number, 
-  headers: any,
+  headers: RequestHeaders,
   message: string,
 ) => {
   return {
