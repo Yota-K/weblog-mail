@@ -26,9 +26,6 @@ export const sendMail: Handler = async (
     throw new Error('お問い合わせ内容が入力されていません');
   }
 
-  const replaceMessage = message.replace(/\n/g, '<br>')
-  console.log(replaceMessage);
-
   // オリジンを取得
   const origin = event.headers.origin;
   let headers: RequestHeaders;
