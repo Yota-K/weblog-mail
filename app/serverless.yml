@@ -7,7 +7,7 @@ provider:
   timeout: 30
   memorySize: 128
   # 特定の許可ステートメントを設定
-  # SESをLambdaから使うには上記の記述が必要
+  # SESをLambdaから使うには下記の記述が必要
   iamRoleStatements:
     - Effect: 'Allow'
       Action:
