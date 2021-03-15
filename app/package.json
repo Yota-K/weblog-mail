@@ -16,6 +16,7 @@
     "@middy/http-json-body-parser": "^1.5.2",
     "aws-sdk": "^2.858.0",
     "dotenv": "^8.2.0",
+    "libmime": "^5.0.0",
     "node-fetch": "^2.6.1",
     "source-map-support": "^0.5.19"
   },
@@ -23,6 +24,7 @@
     "@serverless/typescript": "^2.23.0",
     "@types/aws-lambda": "^8.10.71",
     "@types/node": "^14.14.25",
+    "@types/node-fetch": "^2.5.8",
     "json-schema-to-ts": "^1.5.0",
     "serverless": "^2.23.0",
     "serverless-offline": "^6.8.0",
