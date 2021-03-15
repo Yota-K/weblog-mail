@@ -1,5 +1,6 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import fetch from 'node-fetch';
+import libmime from 'libmime';
 import * as AWS from 'aws-sdk';
 import { ALLOWED_ORIGINS } from './allow-origins';
 import { mailTemplate } from './mail-template';
@@ -55,7 +56,9 @@ export const sendMail: Handler = async (
   const recaptchaResult: RecaptchaResult = await recaptchaRes.json();
 
   // Recaptchaによるチェックが失敗した場合はエラーコードを返す
-  if (!recaptchaResult.success) {
+  const hostname = origin.replace(/https:\/\//, '');
+
+  if (!recaptchaResult.success && recaptchaResult.hostname !== hostname) {
     callback(null, generateResponseHeader(400, headers, '不正なリクエストが送信されました'));
   }
 
@@ -75,7 +78,8 @@ export const sendMail: Handler = async (
       await ses.sendEmail({
         // メールの送信元
         // 認証されたメールアドレスからしかメールを送信することはできない
-        Source: 'powdersugar828828@gmail.com',
+        // libmime・・・送信者名が日本語の場合は文字化け回避のためMIMEエンコードを実施する
+        Source: `${libmime.encodeWord('カルキチブログ', 'Q')} <powdersugar828828@gmail.com>`,
         Destination: {
           // メールの送り先
           ToAddresses: [
