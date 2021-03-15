@@ -1,7 +1,7 @@
 {
-  "name": "app",
+  "name": "weblog-mail",
   "version": "1.0.0",
-  "description": "Serverless aws-nodejs-typescript template",
+  "description": "Serverlessを使用したカルキチブログのメール送信用API",
   "main": "serverless.ts",
   "scripts": {
     "local:invoke": "serverless offline",
