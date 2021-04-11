@@ -58,7 +58,7 @@ export const sendMail: Handler = async (
   // Recaptchaによるチェックが失敗した場合はエラーコードを返す
   const hostname = origin.replace(/https:\/\//, '');
 
-  if (!recaptchaResult.success && recaptchaResult.hostname !== hostname) {
+  if (!recaptchaResult.success || recaptchaResult.hostname !== hostname || recaptchaResult.score < 0.5) {
     callback(null, generateResponseHeader(400, headers, '不正なリクエストが送信されました'));
   }
 
