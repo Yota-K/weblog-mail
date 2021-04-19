@@ -31,6 +31,8 @@ export const sendMail: Handler = async (
   const origin = event.headers.origin;
   let headers: RequestHeaders;
 
+  console.info(`APIが実行されたオリジンは、${origin}です`);
+
   if (ALLOWED_ORIGINS.includes(origin)) {
     headers = {
       'Access-Control-Allow-Origin': origin,
@@ -42,7 +44,10 @@ export const sendMail: Handler = async (
     };
   }
 
-  console.info(`APIが実行されたオリジンは、${origin}です`);
+  // 許可されていないオリジンからリクエストが送られたら処理を中断
+  if (!ALLOWED_ORIGINS.includes(origin)) {
+    callback(null, generateResponseHeader(403, headers, '許可されていないオリジンからリクエストが送信されました'));
+  }
 
   // Recaptchaによるチェックの実施
   const recaptchaRes = await fetch('https://www.google.com/recaptcha/api/siteverify', {
@@ -68,41 +73,33 @@ export const sendMail: Handler = async (
 
   // メールを送る処理
   try {
-    // 許可されていないオリジンからリクエストが送られたらメールを送信しない
-    if (!ALLOWED_ORIGINS.includes(origin)) {
-      callback(
-        null, 
-        generateResponseHeader(403, headers, '許可されていないオリジンからリクエストが送信されました')
-      );
-    } else {
-      await ses.sendEmail({
-        // メールの送信元
-        // 認証されたメールアドレスからしかメールを送信することはできない
-        // libmime・・・送信者名が日本語の場合は文字化け回避のためMIMEエンコードを実施する
-        Source: `${libmime.encodeWord('カルキチブログ', 'Q')} <powdersugar828828@gmail.com>`,
-        Destination: {
-          // メールの送り先
-          ToAddresses: [
-            'karukichi_yah0124@icloud.com',
-          ],
+    await ses.sendEmail({
+      // メールの送信元
+      // 認証されたメールアドレスからしかメールを送信することはできない
+      // libmime・・・送信者名が日本語の場合は文字化け回避のためMIMEエンコードを実施する
+      Source: `${libmime.encodeWord('カルキチブログ', 'Q')} <powdersugar828828@gmail.com>`,
+      Destination: {
+        // メールの送り先
+        ToAddresses: [
+          'karukichi_yah0124@icloud.com',
+        ],
+      },
+      Message: {
+        Subject: {
+          Data: `カルキチブログからメッセージが送信されました`,
+          Charset: 'utf-8',
         },
-        Message: {
-          Subject: {
-            Data: `カルキチブログからメッセージが送信されました`,
-            Charset: 'utf-8',
-          },
-          Body: {
-            Html: {
-              Data: mailTemplate(name, email, message),
-              Charset : 'utf-8',
-            },
+        Body: {
+          Html: {
+            Data: mailTemplate(name, email, message),
+            Charset : 'utf-8',
           },
         },
-      })
-      .promise();
+      },
+    })
+    .promise();
 
-      callback(null, generateResponseHeader(200, headers, 'メールの送信に成功しました'));
-    }
+    callback(null, generateResponseHeader(200, headers, 'メールの送信に成功しました'));
   } catch (er) {
     console.error(er);
 
