@@ -1,4 +1,4 @@
-FROM node:15-alpine
+FROM node:16-alpine
 
 # 環境変数の設定
 ARG AWS_ACCESS_KEY
